@@ -1,6 +1,12 @@
 <script setup>
   // O aluno deverá implementar a lógica do componente.
-  // import { pedidos } from '@/data/pedidos'
+  import { pedidos } from '@/data/pedidos'
+  import { computed } from 'vue';
+
+  const quantidade = computed(() => {
+    return pedidos.value.length;
+})
+// nao deu tempo pra continuar ;-;
 </script>
 
 <template>
@@ -20,7 +26,7 @@
         <span>Pedidos realizados</span>
 
         <!-- O aluno deverá calcular este valor. -->
-        <strong>0</strong>
+        <strong>{{  quantidade.length }}</strong>
       </article>
 
       <article class="summary-card">

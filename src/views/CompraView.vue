@@ -1,6 +1,84 @@
 <script setup>
-  // import { pedidos } from '@/data/pedidos'
-  // O aluno deverá implementar a lógica do componente.
+  import { pedidos } from '@/data/pedidos';
+  import { ref } from 'vue';
+  import { computed } from 'vue';
+
+  const novoCodigo = ref("");
+  const novoCliente = ref("");
+  const novoProduto = ref("");
+  const precoUnitario = ref("");
+  const quantidade = ref("");
+
+  const itens = ref([]);
+  const mensagem = ref("");
+
+  let id = 6;
+
+  const totalCompra = computed(() =>
+    itens.value.reduce(
+      (total, item) => total + item.precoUnitario * item.quantidade,0,),);
+
+  // formatar moeda pegeui de uma atv antiga do sor fabio
+  const formatarMoeda = (valor) =>
+    valor.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+
+
+  const adicionarProduto = () => {
+    const preco = precoUnitario.value;
+    
+    const quantidadeQueTem = quantidade.value;
+
+    if (!novoProduto.value || preco <= 0 || quantidadeQueTem < 1) {
+      mensagem.value = 'Dados invalidos';
+      return;
+    }
+
+    itens.value.push({
+      id: id++,
+      produto: novoProduto.value,
+      precoUnitario: preco ,
+      quantidade: quantidadeQueTem,
+    });
+
+    novoProduto.value = "";
+    precoUnitario.value = "";
+    quantidade.value = "" ;
+    mensagem.value = "";
+  };
+
+  const removerProduto = (id) => {
+    itens.value = itens.value.filter((item) => item.id !== id);
+    // tbm peguei da atv antiga do sor fabio a todolist
+  };
+
+  // limpar fiz igual no hacka 
+  const limpar = () => {
+    novoCodigo.value = "";
+    novoCliente.value = "";
+    novoProduto.value = "";
+    precoUnitario.value = "";
+    quantidade.value = "";
+    itens.value = [];
+    mensagem.value = "";
+  };
+
+  const finalizarPedido = () => {
+    if (!novoCodigo.value.trim() ||  !novoCliente.value.trim() || !itens.value.length){
+      mensagem.value = 'Informe o código, o cliente e pelo menos um produto.';
+      return;
+    }
+
+    pedidos.value.push({
+      codigo: novoCodigo.value.trim(),
+      cliente: novoCliente.value.trim(),
+      itens: itens.value.map((item) => ({ ...item })),
+    });
+    limpar();
+    mensagem.value = 'Pedido finalizado';
+  };
 </script>
 
 <template>
@@ -26,6 +104,7 @@
             name="codigoPedido"
             type="text"
             placeholder="Ex.: PED-001"
+            v-model="novoCodigo"
           />
         </div>
 
@@ -39,13 +118,14 @@
             name="nomeCliente"
             type="text"
             placeholder="Digite o nome do cliente"
+            v-model="novoCliente"
           />
         </div>
       </div>
-
       <!-- O aluno deverá implementar as mensagens de validação. -->
-
+      <p v-if="mensagem.length < 1">{{ mensagem }}</p>
       <!-- Exiba aqui uma mensagem quando os dados forem inválidos. -->
+      
     </section>
 
     <section class="card" aria-labelledby="adicionar-produto">
@@ -62,6 +142,7 @@
             name="nomeProduto"
             type="text"
             placeholder="Ex.: Tomate"
+            v-model="novoProduto"
           />
         </div>
 
@@ -77,6 +158,7 @@
             min="0"
             step="0.01"
             placeholder="0,00"
+            v-model="precoUnitario"
           />
         </div>
 
@@ -92,12 +174,13 @@
             min="1"
             step="1"
             placeholder="0"
+            v-model="quantidade"
           />
         </div>
       </div>
 
       <div class="form-actions">
-        <button class="button button-primary" type="button">
+        <button class="button button-primary" type="button" @click="adicionarProduto">
           Adicionar produto
         </button>
       </div>
@@ -111,7 +194,7 @@
         mostrar uma mensagem na tela quando não houver produtos.
       -->
 
-      <!-- Exiba aqui uma mensagem quando nenhum produto foi adicionado ao pedido.-->
+      <p v-if="itens.length === 0">Nenhum produto foi adicionado</p>
 
       <!--
         O aluno deverá utilizar v-for para apresentar os produtos.
@@ -129,19 +212,21 @@
           </thead>
 
           <tbody>
-            <!--
-              Exemplo da estrutura que deverá ser repetida pelo aluno:
+            <tr v-for="item in itens" :key="item.id">
+              <td> {{ item.produto }} </td>
 
-              <tr>
-                <td>Nome do produto</td>
-                <td>Preço unitário</td>
-                <td>Quantidade</td>
-                <td>Total do item</td>
-                <td>
-                  <button type="button">Excluir</button>
-                </td>
-              </tr>
-            -->
+              <td> {{ formatarMoeda(item.precoUnitario) }} </td>
+
+              <td> {{ item.quantidade }} </td>
+
+              <td>{{ formatarMoeda(item.precoUnitario * item.quantidade) }} </td>
+
+              <td>
+                <button type="button" @click="removerProduto(item.id)">
+                  Excluir
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -149,21 +234,15 @@
       <div class="order-total">
         <span>Total da compra</span>
 
-        <!-- O aluno deverá apresentar aqui o total calculado. -->
-        <strong>R$ 0,00</strong>
+        <strong>{{ formatarMoeda(totalCompra) }}</strong>
       </div>
 
       <div class="form-actions">
-        <button class="button button-secondary" type="button">
-          Limpar
-        </button>
+        <button class="button button-secondary" type="button" @click="limpar()">Limpar</button>
 
-        <button class="button button-primary" type="button">
-          Finalizar pedido
-        </button>
+        <button class="button button-primary" type="button" @click="finalizarPedido()">Finalizar pedido</button>
       </div>
     </section>
   </main>
 </template>
-
 
